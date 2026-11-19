@@ -69,7 +69,7 @@ El índice de masa corporal (IMC) es una medida utilizada para relacionar el pes
 Se calcula mediante la siguiente fórmula:
 
 \[
-IMC = \frac{\text{Peso (kg)}}{\text{Altura (m)}^2}
+IMC = Peso (kg) / [Altura (m) × Altura (m)]
 \]
 
 Para realizar el cálculo, la altura debe expresarse en metros. Si los datos originales están registrados en centímetros, es necesario dividirlos entre 100 antes de aplicar la fórmula.
@@ -80,7 +80,7 @@ El índice cintura-cadera (ICC) es una medida antropométrica que expresa la rel
 Se calcula mediante la siguiente fórmula:
 
 \[
-ICC = \frac{\text{Perímetro de cintura}}{\text{Perímetro de cadera}}
+ICC = Perímetro de cintura (cm) / Perímetro de cadera (cm)
 \]
 
 Ambas medidas deben expresarse en la misma unidad, por ejemplo, centímetros.
