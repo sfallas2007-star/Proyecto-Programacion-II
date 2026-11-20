@@ -19,6 +19,13 @@ df["sexo"] = df["sexo"].map({
 # Índice cintura-cadera
 df["ICC"] = df["cintura"] / df["cadera"]
 
+# Índice de masa corporal
+df["altura_m"] = df["altura"] / 100
+df["IMC"] = df["peso"] / (df["altura_m"] ** 2)
+
+# Índice cintura-estatura
+df["ICE"] = df["cintura"] / df["altura"]
+
 # Grupos de edad
 df["grupo_edad"] = pd.cut(
     df["edad"],
@@ -126,7 +133,67 @@ app_ui = ui.page_sidebar(
                 "El gráfico permite comparar la distribución del "
                 "perímetro de cadera entre los diferentes grupos de edad."
             )
+
         )
+
+        ), 
+
+        # ----------------------------------------------------
+        # PESTAÑA 3: CADERA SEGÚN SEXO Y EDAD
+        # ----------------------------------------------------
+
+        ui.nav_panel(
+
+            "Cadera por sexo y edad",
+
+            ui.h4("Pregunta de investigación"),
+
+            ui.p(
+                "¿Existen diferencias en el perímetro de cadera "
+                "entre hombres y mujeres, considerando sus grupos de edad?"
+            ),
+
+            ui.hr(),
+
+            ui.h4("Perímetro de cadera según sexo y grupo de edad"),
+
+            output_widget("grafico_cadera_sexo"),
+
+            ui.p(
+                "El gráfico compara la distribución del perímetro "
+                "de cadera entre hombres y mujeres dentro de cada grupo de edad."
+            )
+
+        ),
+
+        # ----------------------------------------------------
+        # PESTAÑA 4: RELACIÓN ENTRE IMC E ICE
+        # ----------------------------------------------------
+
+        ui.nav_panel(
+
+            "Relación IMC e ICE",
+
+            ui.h4("Pregunta de investigación"),
+
+            ui.p(
+                "¿Qué relación existe entre el índice de masa corporal "
+                "(IMC) y la relación cintura-estatura (ICE)?"
+            ),
+
+            ui.hr(),
+
+            ui.h4("Diagrama de dispersión"),
+
+            output_widget("grafico_imc_ice"),
+
+            ui.p(
+                "El gráfico muestra la relación entre el IMC y el índice "
+                "cintura-estatura, diferenciando a los individuos según sexo."
+            )
+
+        ),
+
     ),
 
     title="Perfil antropométrico en adultos mayores",
@@ -270,9 +337,112 @@ def server(input, output, session):
 
         return fig
 
+    # --------------------------------------------------------
+    # GRÁFICO 3: CADERA SEGÚN SEXO Y GRUPO DE EDAD
+    # --------------------------------------------------------
+
+    @render_widget
+    def grafico_cadera_sexo():
+
+        datos = datos_filtrados()
+
+        fig = px.box(
+
+            datos,
+
+            x="grupo_edad",
+            y="cadera",
+            color="sexo",
+
+            points="all",
+
+            hover_data=["edad"],
+
+            color_discrete_map={
+                "Hombre": "#6495ED",
+                "Mujer": "#FF69B4"
+            },
+
+            labels={
+                "grupo_edad": "Grupo de edad",
+                "cadera": "Perímetro de cadera (cm)",
+                "sexo": "Sexo"
+            },
+
+            title="Perímetro de cadera según sexo y grupo de edad"
+
+        )
+
+        fig.update_layout(
+            template="plotly_white",
+            height=520,
+            xaxis_title="Grupo de edad",
+            yaxis_title="Perímetro de cadera (cm)"
+        )
+
+        fig.update_traces(
+            marker=dict(size=8)
+        )
+
+        return fig
+
+    # --------------------------------------------------------
+    # GRÁFICO 4: RELACIÓN IMC E ICE
+    # --------------------------------------------------------
+
+    @render_widget
+    def grafico_imc_ice():
+
+        datos = datos_filtrados()
+
+        fig = px.scatter(
+
+            datos,
+
+            x="IMC",
+            y="ICE",
+
+            color="sexo",
+
+            trendline="ols",
+
+            hover_data=[
+                "edad",
+                "peso",
+                "altura"
+            ],
+
+            color_discrete_map={
+                "Hombre": "#4E79A7",
+                "Mujer": "#E15759"
+            },
+
+            labels={
+                "IMC": "Índice de masa corporal",
+                "ICE": "Índice cintura-estatura",
+                "edad": "Edad",
+                "peso": "Peso",
+                "altura": "Altura",
+                "sexo": "Sexo"
+            },
+
+            title="Relación entre IMC e ICE"
+
+        )
+
+        fig.update_layout(
+            template="plotly_white",
+            height=520,
+            xaxis_title="IMC",
+            yaxis_title="ICE"
+        )
+
+        return fig
+
 
 # ============================================================
 # 4. EJECUCIÓN DE LA APLICACIÓN
 # ============================================================
 
 app = App(app_ui, server)
+
