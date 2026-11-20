@@ -2,4 +2,10 @@
 shiny
 shinywidgets
 pandas
+numpy
+matplotlib
+seaborn
 plotly
+scipy
+statsmodels
+jinja2

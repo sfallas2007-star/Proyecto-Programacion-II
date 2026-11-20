@@ -7,17 +7,15 @@
 # ============================================================
 # 1. LIBRERÍAS DEL PROYECTO
 # ============================================================
-
-from pathlib import Path
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import plotly.express as px
-from shiny import App, reactive, render, ui
-from shinywidgets import output_widget, render_widget
 from scipy import stats
 from shiny import App, reactive, render, ui
 from shinywidgets import output_widget, render_widget
 from pathlib import Path
-
 # ============================================================
 # 2. CARGA Y PREPARACIÓN DE LOS DATOS
 # ============================================================
@@ -211,10 +209,6 @@ app_ui = ui.page_sidebar(
                 "El gráfico permite comparar la distribución del "
                 "perímetro de cadera entre los diferentes grupos de edad."
             )
-
-        )
-
-        ), 
 
         ),
 
