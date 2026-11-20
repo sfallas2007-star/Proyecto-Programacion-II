@@ -1,47 +1,98 @@
+# ============================================================
+# PROYECTO DE PROGRAMACIÓN II - UCR
+# APLICACIÓN SHINY: PERFIL ANTROPOMÉTRICO EN ADULTOS MAYORES
+# ============================================================
+
+
+# ============================================================
+# 1. LIBRERÍAS DEL PROYECTO
+# ============================================================
 
 from pathlib import Path
 import pandas as pd
 import plotly.express as px
 from shiny import App, reactive, render, ui
 from shinywidgets import output_widget, render_widget
+from scipy import stats
+from shiny import App, reactive, render, ui
+from shinywidgets import output_widget, render_widget
+from pathlib import Path
+
 # ============================================================
-# 1. CARGA Y PREPARACIÓN DE LOS DATOS
+# 2. CARGA Y PREPARACIÓN DE LOS DATOS
 # ============================================================
+
 ruta = Path(__file__).parent / "antropometria.csv"
 df = pd.read_csv(ruta)
 
+
 # Codificación de sexo
+
 df["sexo"] = df["sexo"].map({
     1: "Hombre",
     2: "Mujer"
 })
 
+
 # Índice cintura-cadera
+
 df["ICC"] = df["cintura"] / df["cadera"]
 
+
 # Índice de masa corporal
+
 df["altura_m"] = df["altura"] / 100
 df["IMC"] = df["peso"] / (df["altura_m"] ** 2)
 
+
 # Índice cintura-estatura
+
 df["ICE"] = df["cintura"] / df["altura"]
 
+
 # Grupos de edad
+
 df["grupo_edad"] = pd.cut(
     df["edad"],
     bins=[80, 84, 88, float("inf")],
-    labels=["81–84 años", "85–88 años", "89 años o más"]
+    labels=[
+        "81–84 años",
+        "85–88 años",
+        "89 años o más"
+    ]
 )
 
 
 # ============================================================
-# 2. INTERFAZ DE LA APLICACIÓN
+# 3. VARIABLES DEL ANÁLISIS DE CORRELACIONES
+# ============================================================
+
+variables_correlaciones = [
+    "peso",
+    "altura",
+    "cintura",
+    "cadera",
+    "tobillo",
+    "rodilla"
+]
+
+
+# ============================================================
+# 4. INTERFAZ DE LA APLICACIÓN
 # ============================================================
 
 app_ui = ui.page_sidebar(
 
+    # --------------------------------------------------------
+    # BARRA LATERAL: FILTROS GENERALES
+    # --------------------------------------------------------
+
     ui.sidebar(
-        ui.h4("Filtros"),
+
+        ui.h4("Filtros generales"),
+
+        # FILTRO DE SEXO
+
         ui.input_select(
             "sexo",
             "Seleccionar sexo:",
@@ -52,7 +103,27 @@ app_ui = ui.page_sidebar(
             },
             selected="Todos"
         ),
+
+        # FILTRO DE EDAD
+
+        ui.input_select(
+            "edad",
+            "Seleccionar grupo de edad:",
+            choices={
+                "Todos": "Todos",
+                "81–84 años": "81–84 años",
+                "85–88 años": "85–88 años",
+                "89 años o más": "89 años o más"
+            },
+            selected="Todos"
+        )
+
     ),
+
+
+    # ========================================================
+    # PESTAÑAS DE LA APLICACIÓN
+    # ========================================================
 
     ui.navset_tab(
 
@@ -61,9 +132,11 @@ app_ui = ui.page_sidebar(
         # ----------------------------------------------------
 
         ui.nav_panel(
-            "Relación cintura-cadera",
+
+            "índice cintura-cadera",
 
             ui.h4("Pregunta de investigación"),
+
             ui.p(
                 "¿Existen diferencias en la relación cintura-cadera "
                 "entre hombres y mujeres?"
@@ -96,6 +169,7 @@ app_ui = ui.page_sidebar(
                 ),
 
                 col_widths=[3, 3, 3, 3]
+
             ),
 
             ui.hr(),
@@ -108,16 +182,20 @@ app_ui = ui.page_sidebar(
                 "El gráfico permite comparar la distribución del índice "
                 "cintura-cadera entre hombres y mujeres."
             )
+
         ),
+
 
         # ----------------------------------------------------
         # PESTAÑA 2: PERÍMETRO DE CADERA POR EDAD
         # ----------------------------------------------------
 
         ui.nav_panel(
+
             "Perímetro de cadera por edad",
 
             ui.h4("Pregunta de investigación"),
+
             ui.p(
                 "¿Cómo varía el perímetro de cadera entre los distintos "
                 "grupos de edad de los adultos mayores?"
@@ -137,6 +215,9 @@ app_ui = ui.page_sidebar(
         )
 
         ), 
+
+        ),
+
 
         # ----------------------------------------------------
         # PESTAÑA 3: CADERA SEGÚN SEXO Y EDAD
@@ -166,6 +247,7 @@ app_ui = ui.page_sidebar(
 
         ),
 
+
         # ----------------------------------------------------
         # PESTAÑA 4: RELACIÓN ENTRE IMC E ICE
         # ----------------------------------------------------
@@ -194,56 +276,192 @@ app_ui = ui.page_sidebar(
 
         ),
 
+        # ----------------------------------------------------
+        # PESTAÑA 5: RELACIÓN ENTRE CINTURA Y CADERA
+        # ----------------------------------------------------
+
+        ui.nav_panel(
+
+            "Relación cintura-cadera",
+
+            ui.h4("Pregunta de investigación"),
+
+            ui.p(
+                "¿Qué relación existe entre el perímetro de cintura "
+                "y el perímetro de cadera en los adultos mayores?"
+            ),
+
+            ui.hr(),
+
+            ui.h4("Configuración del análisis"),
+
+            ui.card(
+
+                ui.input_select(
+                    "metodo",
+                    "Seleccionar método de correlación:",
+                    choices={
+                        "pearson": "Pearson",
+                        "spearman": "Spearman"
+                    },
+                    selected="pearson"
+                ),
+
+                ui.output_text("metodo_actual")
+
+            ),
+
+            ui.hr(),
+
+            ui.h4("Diagrama de dispersión por sexo"),
+
+            ui.output_plot("dispersion"),
+
+            ui.hr(),
+
+            ui.h4("Resultados del análisis de correlación"),
+
+            ui.output_table("resultado_correlacion")
+
+        ),
+
+
+        # ----------------------------------------------------
+        # PESTAÑA 6: MATRIZ DE CORRELACIONES
+        # ----------------------------------------------------
+
+        ui.nav_panel(
+
+            "Matriz de correlaciones",
+
+            ui.h4("Pregunta de investigación"),
+
+            ui.p(
+                "¿Qué patrones de correlación existen entre las diferentes "
+                "medidas antropométricas de los individuos?"
+            ),
+
+            ui.hr(),
+
+            ui.h4("Matriz de correlaciones"),
+
+            ui.output_plot("heatmap"),
+
+            ui.hr(),
+
+            ui.p(
+                "Interpretación: los coeficientes cercanos a -1 indican "
+                "correlaciones negativas fuertes; los cercanos a 1 indican "
+                "correlaciones positivas fuertes; y los cercanos a 0 "
+                "indican relaciones lineales débiles."
+            ),
+
+            ui.p(
+                "Fuente: elaboración propia. Coeficiente de correlación "
+                "de Pearson."
+            ),
+
+            ui.hr(),
+
+            ui.h4("Tabla de coeficientes de correlación"),
+
+            ui.output_table("tabla_correlaciones"),
+
+            ui.hr(),
+
+            ui.h4("Filtro adicional de zona de residencia"),
+
+            ui.input_select(
+                "zona_correlaciones",
+                "Seleccionar zona:",
+                choices={
+                    "Todas": "Todas",
+                    "1": "Urbana",
+                    "0": "Rural"
+                },
+                selected="Todas"
+            )
+
+        )
+
     ),
 
-    title="Perfil antropométrico en adultos mayores",
+    title="Perfil antropométrico en adultos mayores"
 
 )
 
 
 # ============================================================
-# 3. FUNCIONES DEL SERVIDOR
+# 5. FUNCIONES DEL SERVIDOR
 # ============================================================
 
 def server(input, output, session):
 
-    # Filtro compartido por ambos gráficos
+
+    # ========================================================
+    # 5.1. FILTROS GENERALES DE SEXO Y EDAD
+    # ========================================================
 
     @reactive.calc
     def datos_filtrados():
 
+        datos = df.copy()
+
+        # FILTRO DE SEXO
+
         sexo_seleccionado = input.sexo()
 
-        if sexo_seleccionado == "Todos":
-            return df.copy()
+        if sexo_seleccionado != "Todos":
 
-        return df[df["sexo"] == sexo_seleccionado].copy()
+            datos = datos[
+                datos["sexo"] == sexo_seleccionado
+            ]
 
 
-    # --------------------------------------------------------
-    # INDICADORES DEL ÍNDICE CINTURA-CADERA
-    # --------------------------------------------------------
+        # FILTRO DE GRUPO DE EDAD
+
+        edad_seleccionada = input.edad()
+
+        if edad_seleccionada != "Todos":
+
+            datos = datos[
+                datos["grupo_edad"] == edad_seleccionada
+            ]
+
+        return datos.copy()
+
+
+    # ========================================================
+    # 5.2. INDICADORES DEL ÍNDICE CINTURA-CADERA
+    # ========================================================
 
     @render.text
     def n_obs():
+
         return f"{len(datos_filtrados())}"
+
 
     @render.text
     def media_icc():
+
         return f"{datos_filtrados()['ICC'].mean():.3f}"
+
 
     @render.text
     def mediana_icc():
+
         return f"{datos_filtrados()['ICC'].median():.3f}"
+
 
     @render.text
     def sd_icc():
+
         return f"{datos_filtrados()['ICC'].std():.3f}"
 
 
-    # --------------------------------------------------------
-    # GRÁFICO 1: RELACIÓN CINTURA-CADERA
-    # --------------------------------------------------------
+    # ========================================================
+    # 5.3. GRÁFICO 1: ÍNDICE CINTURA-CADERA
+    # ========================================================
 
     @render_widget
     def grafico_icc():
@@ -251,16 +469,22 @@ def server(input, output, session):
         datos = datos_filtrados()
 
         fig = px.box(
+
             datos,
+
             x="sexo",
             y="ICC",
             color="sexo",
+
             points="all",
+
             hover_data=["cintura", "cadera", "edad"],
+
             color_discrete_map={
                 "Hombre": "#1769AA",
                 "Mujer": "#E67E22"
             },
+
             labels={
                 "sexo": "Sexo",
                 "ICC": "Índice cintura-cadera",
@@ -268,7 +492,9 @@ def server(input, output, session):
                 "cadera": "Perímetro de cadera",
                 "edad": "Edad"
             },
+
             title="Índice cintura-cadera según sexo"
+
         )
 
         fig.update_layout(
@@ -286,9 +512,9 @@ def server(input, output, session):
         return fig
 
 
-    # --------------------------------------------------------
-    # GRÁFICO 2: PERÍMETRO DE CADERA POR GRUPO DE EDAD
-    # --------------------------------------------------------
+    # ========================================================
+    # 5.4. GRÁFICO 2: PERÍMETRO DE CADERA POR EDAD
+    # ========================================================
 
     @render_widget
     def grafico_cadera():
@@ -296,12 +522,17 @@ def server(input, output, session):
         datos = datos_filtrados()
 
         fig = px.box(
+
             datos,
+
             x="grupo_edad",
             y="cadera",
             color="grupo_edad",
+
             points="all",
+
             hover_data=["edad", "sexo"],
+
             category_orders={
                 "grupo_edad": [
                     "81–84 años",
@@ -309,18 +540,22 @@ def server(input, output, session):
                     "89 años o más"
                 ]
             },
+
             color_discrete_map={
                 "81–84 años": "#1769AA",
                 "85–88 años": "#E67E22",
                 "89 años o más": "#269B72"
             },
+
             labels={
                 "grupo_edad": "Grupo de edad",
                 "cadera": "Perímetro de cadera (cm)",
                 "edad": "Edad",
                 "sexo": "Sexo"
             },
+
             title="Perímetro de cadera según grupo de edad"
+
         )
 
         fig.update_layout(
@@ -337,9 +572,10 @@ def server(input, output, session):
 
         return fig
 
-    # --------------------------------------------------------
-    # GRÁFICO 3: CADERA SEGÚN SEXO Y GRUPO DE EDAD
-    # --------------------------------------------------------
+    # ========================================================
+    # 5.5. GRÁFICO 3: CADERA SEGÚN SEXO Y GRUPO DE EDAD
+    # ========================================================
+
 
     @render_widget
     def grafico_cadera_sexo():
@@ -361,6 +597,14 @@ def server(input, output, session):
             color_discrete_map={
                 "Hombre": "#6495ED",
                 "Mujer": "#FF69B4"
+            },
+
+            category_orders={
+                "grupo_edad": [
+                    "81–84 años",
+                    "85–88 años",
+                    "89 años o más"
+                ]
             },
 
             labels={
@@ -386,9 +630,10 @@ def server(input, output, session):
 
         return fig
 
-    # --------------------------------------------------------
-    # GRÁFICO 4: RELACIÓN IMC E ICE
-    # --------------------------------------------------------
+
+    # ========================================================
+    # 5.6. GRÁFICO 4: RELACIÓN ENTRE IMC E ICE
+    # ========================================================
 
     @render_widget
     def grafico_imc_ice():
@@ -440,8 +685,327 @@ def server(input, output, session):
         return fig
 
 
+    # ========================================================
+    # 5.7. GRÁFICO 5: RELACIÓN ENTRE CINTURA Y CADERA
+    # ========================================================
+
+
+    # --------------------------------------------------------
+    # PREPARACIÓN DE LOS DATOS
+    # --------------------------------------------------------
+
+    @reactive.calc
+    def datos_grafico_cintura_cadera():
+
+        datos = datos_filtrados()
+
+        return datos[
+            ["cintura", "cadera", "sexo"]
+        ].copy()
+
+
+    # --------------------------------------------------------
+    # DIAGRAMA DE DISPERSIÓN Y LÍNEAS DE TENDENCIA
+    # --------------------------------------------------------
+
+    @render.plot
+    def dispersion():
+
+        datos = datos_grafico_cintura_cadera()
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        colores = {
+            "Hombre": "#4472C4",
+            "Mujer": "#ED7D31"
+        }
+
+        for grupo, color in colores.items():
+
+            grupo_datos = datos[
+                datos["sexo"] == grupo
+            ].dropna(
+                subset=["cintura", "cadera"]
+            )
+
+            if grupo_datos.empty:
+                continue
+
+            ax.scatter(
+                grupo_datos["cintura"],
+                grupo_datos["cadera"],
+                color=color,
+                label=grupo,
+                alpha=0.7,
+                s=45
+            )
+
+            if grupo_datos["cintura"].nunique() >= 2:
+
+                x = grupo_datos["cintura"].to_numpy()
+                y = grupo_datos["cadera"].to_numpy()
+
+                pendiente, intercepto = np.polyfit(x, y, 1)
+
+                x_linea = np.linspace(
+                    x.min(),
+                    x.max(),
+                    100
+                )
+
+                y_linea = pendiente * x_linea + intercepto
+
+                ax.plot(
+                    x_linea,
+                    y_linea,
+                    color=color,
+                    linewidth=2
+                )
+
+        ax.set_title(
+            "Relación entre el perímetro de cintura y cadera",
+            fontsize=14,
+            fontweight="bold",
+            color="#17365D"
+        )
+
+        ax.set_xlabel(
+            "Perímetro de cintura (cm)",
+            fontsize=11
+        )
+
+        ax.set_ylabel(
+            "Perímetro de cadera (cm)",
+            fontsize=11
+        )
+
+        ax.legend(title="Sexo")
+        ax.grid(alpha=0.25)
+
+        fig.tight_layout()
+
+        return fig
+
+
+    # --------------------------------------------------------
+    # CÁLCULO Y PRESENTACIÓN DE LAS CORRELACIONES
+    # --------------------------------------------------------
+
+    @render.table
+    def resultado_correlacion():
+
+        # Obtener los datos que ya incluyen los filtros generales
+        datos = datos_grafico_cintura_cadera().copy()
+
+        # Leer el método seleccionado directamente del selector
+        metodo = str(input.metodo()).strip().lower()
+
+        # Seleccionar la función estadística
+        if metodo == "pearson":
+
+            funcion = stats.pearsonr
+            nombre_metodo = "Pearson"
+
+        elif metodo == "spearman":
+
+            funcion = stats.spearmanr
+            nombre_metodo = "Spearman"
+
+        else:
+
+            raise ValueError(
+                f"Método no reconocido: {metodo}"
+            )
+
+        # Separar los datos en tres grupos
+        grupos = {
+
+            "Total": datos,
+
+            "Hombres": datos[
+                datos["sexo"] == "Hombre"
+            ],
+
+            "Mujeres": datos[
+                datos["sexo"] == "Mujer"
+            ]
+
+        }
+
+        resultados = []
+
+        # Calcular la correlación para cada grupo
+        for nombre, grupo in grupos.items():
+
+            # Eliminar datos faltantes
+            grupo = grupo[
+                ["cintura", "cadera"]
+            ].dropna()
+
+            x = grupo["cintura"]
+            y = grupo["cadera"]
+
+            # Verificar que existan suficientes datos y variación
+            if (
+                len(grupo) >= 2
+                and x.nunique() >= 2
+                and y.nunique() >= 2
+            ):
+
+                # Calcular usando el método seleccionado
+                coeficiente, valor_p = funcion(
+                    x.to_numpy(),
+                    y.to_numpy()
+                )
+
+            else:
+
+                coeficiente = np.nan
+                valor_p = np.nan
+
+            # Guardar los resultados
+            resultados.append({
+
+                "Grupo": nombre,
+
+                "Método utilizado": nombre_metodo,
+
+                "Coeficiente": (
+                    f"{coeficiente:.4f}"
+                    if pd.notna(coeficiente)
+                    else "No disponible"
+                ),
+
+                "Valor p": (
+                    f"{valor_p:.2e}"
+                    if pd.notna(valor_p)
+                    else "No disponible"
+                )
+
+            })
+
+        return pd.DataFrame(resultados)
+
+
+    # --------------------------------------------------------
+    # MOSTRAR EL MÉTODO SELECCIONADO
+    # --------------------------------------------------------
+
+    @render.text
+    def metodo_actual():
+
+        metodo = str(input.metodo()).strip().lower()
+
+        if metodo == "pearson":
+
+            return "Método seleccionado: Pearson"
+
+        elif metodo == "spearman":
+
+            return "Método seleccionado: Spearman"
+
+        else:
+
+            return "Método no reconocido"
+
+
+    # ========================================================
+    # 5.8. GRÁFICO 6: MATRIZ DE CORRELACIONES
+    # ========================================================
+
+
+    # --------------------------------------------------------
+    # FILTRAR LOS DATOS SEGÚN LA ZONA DE RESIDENCIA
+    # --------------------------------------------------------
+
+    @reactive.calc
+    def datos_matriz_correlaciones():
+
+        datos = datos_filtrados().copy()
+
+        zona_seleccionada = input.zona_correlaciones()
+
+        if zona_seleccionada != "Todas":
+
+            datos = datos[
+                datos["urbano"] == int(zona_seleccionada)
+            ]
+
+        return datos
+
+
+    # --------------------------------------------------------
+    # CALCULAR LA MATRIZ DE CORRELACIONES
+    # --------------------------------------------------------
+
+    @reactive.calc
+    def matriz_correlaciones():
+
+        datos = datos_matriz_correlaciones()
+
+        return datos[
+            variables_correlaciones
+        ].corr(
+            method="pearson"
+        )
+
+
+    # --------------------------------------------------------
+    # GENERAR EL MAPA DE CALOR
+    # --------------------------------------------------------
+
+    @render.plot
+    def heatmap():
+
+        correlaciones = matriz_correlaciones()
+
+        fig, ax = plt.subplots(figsize=(10, 7))
+
+        sns.heatmap(
+
+            correlaciones,
+
+            annot=True,
+
+            cmap="coolwarm",
+
+            fmt=".2f",
+
+            vmin=-1,
+
+            vmax=1,
+
+            center=0,
+
+            linewidths=0.5,
+
+            square=True,
+
+            ax=ax
+
+        )
+
+        ax.set_title(
+            "Matriz de correlaciones de las medidas antropométricas"
+        )
+
+        fig.tight_layout()
+
+        return fig
+
+
+    # --------------------------------------------------------
+    # TABLA DE COEFICIENTES DE CORRELACIÓN
+    # --------------------------------------------------------
+
+    @render.table
+    def tabla_correlaciones():
+
+        return matriz_correlaciones().round(3)
+
+
 # ============================================================
-# 4. EJECUCIÓN DE LA APLICACIÓN
+# 6. EJECUCIÓN DE LA APLICACIÓN
 # ============================================================
 
 app = App(app_ui, server)
