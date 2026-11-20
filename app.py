@@ -120,6 +120,190 @@ app_ui = ui.page_sidebar(
     ui.navset_tab(
 
         # ----------------------------------------------------
+        # PESTAÑA 0: CONTEXTO DEL PROYECTO
+        # ----------------------------------------------------
+
+        ui.nav_panel(
+
+            "Contexto",
+
+            ui.h2("Perfil antropométrico en adultos mayores"),
+
+            ui.h4("Estudio ENASEM"),
+
+            ui.hr(),
+
+            ui.layout_columns(
+
+                ui.card(
+
+                    ui.card_header("Sobre el proyecto"),
+
+                    ui.p(
+                        "Esta aplicación fue desarrollada con el fin de "
+                        "explorar y analizar información antropométrica proveniente "
+                        "de la Encuesta Nacional sobre Salud y Envejecimiento "
+                        "en México (ENASEM)."
+                    ),
+
+                    ui.p(
+                        "La ENASEM es un estudio longitudinal que investiga "
+                        "el proceso de envejecimiento, el estado de salud, la "
+                        "mortalidad y diversos factores sociodemográficos de "
+                        "la población adulta mayor mexicana."
+                    )
+                ),
+
+                ui.card(
+
+                    ui.card_header("Descripción del conjunto de datos"),
+
+                    ui.tags.ul(
+
+                        ui.tags.li("93 observaciones de adultos mayores."),
+
+                        ui.tags.li(
+                            "11 variables originales de carácter "
+                            "antropométrico y sociodemográfico."
+                        ),
+
+                        ui.tags.li(
+                            "Información sobre sexo, edad, escolaridad y "
+                            "medidas corporales."
+                        ),
+
+                        ui.tags.li(
+                            "Variables antropométricas como peso, altura, "
+                            "cintura, cadera, rodilla y tobillo."
+                        )
+                    )
+                ),
+
+                col_widths=[6, 6]
+
+            ),
+
+            ui.hr(),
+
+            ui.layout_columns(
+
+                ui.card(
+
+                    ui.card_header("Indicadores construidos"),
+
+                    ui.tags.ul(
+
+                        ui.tags.li(
+                            "ICC = Perímetro de cintura / Perímetro de cadera"
+                        ),
+
+                        ui.tags.li(
+                            "IMC = Peso (kg) / Altura² (m²)"
+                        ),
+
+                        ui.tags.li(
+                            "ICE = Perímetro de cintura / Estatura"
+                        )
+                    )
+
+                ),
+
+                ui.card(
+
+                    ui.card_header("¿Cómo utilizar la aplicación?"),
+
+                    ui.tags.ol(
+
+                        ui.tags.li(
+                            "Seleccione filtros de sexo y grupo de edad en la barra lateral."
+                        ),
+
+                        ui.tags.li(
+                            "Navegue entre las diferentes pestañas para explorar los análisis."
+                        ),
+
+                        ui.tags.li(
+                            "Interactúe con los gráficos para visualizar información detallada."
+                        ),
+
+                        ui.tags.li(
+                            "Compare resultados entre diferentes grupos de individuos."
+                        )
+                    )
+
+                ),
+
+                col_widths=[6, 6]
+
+            ),
+
+            ui.hr(),
+
+            ui.h3("Preguntas que responde la aplicación"),
+
+            ui.layout_columns(
+
+                ui.card(
+                    ui.card_header("Pregunta 1"),
+                    ui.p(
+                        "¿Existen diferencias en la relación "
+                        "cintura-cadera entre hombres y mujeres?"
+                    )
+                ),
+
+                ui.card(
+                    ui.card_header("Pregunta 2"),
+                    ui.p(
+                        "¿Qué relación existe entre el perímetro de cintura "
+                        "y el perímetro de cadera en los adultos mayores?"
+                    )
+                ),
+
+                ui.card(
+                    ui.card_header("Pregunta 3"),
+                    ui.p(
+                        "¿Cómo varía el perímetro de cadera entre los "
+                        "distintos grupos de edad?"
+                    )
+                ),
+
+                col_widths=[4, 4, 4]
+
+            ),
+
+            ui.layout_columns(
+
+                ui.card(
+                    ui.card_header("Pregunta 4"),
+                    ui.p(
+                        "¿Existen diferencias en el perímetro de cadera "
+                        "entre hombres y mujeres considerando sus grupos de edad?"
+                    )
+                ),
+
+                ui.card(
+                    ui.card_header("Pregunta 5"),
+                    ui.p(
+                        "¿Qué relación existe entre el índice de masa corporal "
+                        "(IMC) y la relación cintura-estatura (ICE)?"
+                    )
+                ),
+
+                ui.card(
+                    ui.card_header("Pregunta 6"),
+                    ui.p(
+                        "¿Qué patrones de correlación existen entre las "
+                        "diferentes medidas antropométricas?"
+                    )
+                ),
+
+                col_widths=[4, 4, 4]
+
+            )
+
+        ),
+
+        # ----------------------------------------------------
         # PESTAÑA 1: ÍNDICE CINTURA-CADERA
         # ----------------------------------------------------
 
